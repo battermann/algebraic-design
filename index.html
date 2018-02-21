@@ -1,0 +1,1192 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Domain Modeling With Algebraci API Design</title>
+    <meta name="description" content="">
+    <meta name="author" content="Leif Battermann">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="//code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="//code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/night.css" id="theme">
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/style.css" />
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/deedle.css" />
+    <link type="text/css" rel="stylesheet" href="css/custom.css" />
+    <script src="fsharp.formatting/styles/tips.js" type="text/javascript"></script>
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+    <link rel="stylesheet" href="css/fsreveal.css">
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+    </script>
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+    <script language="javascript" type="text/javascript">
+        function init()
+        {
+            websocket = new WebSocket("ws://"+window.location.host+"/websocket");
+            websocket.onmessage = function(evt) { location.reload(); };
+        }
+        window.addEventListener("load", init, false);
+    </script>
+</head>
+<body>
+    <div class="reveal">
+        
+        <!-- Any section element inside of this container is displayed as a slide -->
+        <div class="slides">
+            <section >
+<h2>DOMAIN MODELING</h2>
+<p><em>with</em></p>
+<h2>ALGEBRAIC API DESIGN</h2>
+<br/>
+<p>Leif Battermann - <a href="https://twitter.com/leifbattermann">@leifbattermann</a></p>
+<small><a href="http://www.hivemindtechnologies.com/imprint/">Hivemind Technologies AG</a></small>
+</section>
+<section >
+<h1>overview</h1>
+<ul>
+<li>goal</li>
+<li>FP concepts</li>
+<li>algebraic design 1 - basics</li>
+<li>algebraic design 2 - effects</li>
+</ul>
+</section>
+<section >
+<h1>goal</h1>
+<br/>
+<h3>write apps that are</h3>
+<ul>
+<li>type safe</li>
+<li>composable</li>
+<li>testable</li>
+<li>purely functional</li>
+<li>easy to reason about</li>
+</ul>
+</section>
+<section >
+<h1>FP concepts</h1>
+</section>
+<section >
+<h2>computation vs side effect</h2>
+<br />
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="java">public class Pythagoras {
+  public static Double hypotenuse(Double a, Double b) {
+    Double aSquare = a * a;
+    Double bSquare = b * b;
+    launchMissile();
+    return Math.sqrt(aSquare + bSquare);
+  }
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h1>FP =</h1>
+<h2>totality</h2>
+<h2>determinism</h2>
+<h2>purity</h2>
+<br/>
+<h2>+ composition</h2>
+</section>
+<section >
+<h3><code>val f: A =&gt; B</code></h3>
+<img src="images/function.svg" style="background: transparent; border-style: none;" width="600" height="350">
+</section>
+<section >
+<h2>non-total</h2>
+<img src="images/non-total.svg" style="background: transparent; border-style: none;" width="600" height="350">
+</section>
+<section >
+<h2>non-deterministic</h2>
+<img src="images/non-deterministic.svg" style="background: transparent; border-style: none;" width="600" height="350">
+</section>
+<section >
+<h2>impure</h2>
+<img src="images/impure.svg" style="background: transparent; border-style: none;" width="600" height="350">
+</section>
+<section >
+<h2>substitution model</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">1 + 2 + 3  // evaluates to 6
+// res0: Int = 6
+
+println("hi") // evaluates to ()
+// hi
+</code></pre></td></tr></table>
+<br/>
+<h3><span class="math">\(\Rightarrow\)</span> <em>equational reasoning</em></h3>
+</section>
+<section >
+<h1>referential transparency</h1>
+<br/>
+<blockquote>
+<p>An expression <span class="math">\(e\)</span> is referentially transparent if, for all programs <span class="math">\(p\)</span>, all occurrences of <span class="math">\(e\)</span> in <span class="math">\(p\)</span> can be replaced by the result of evaluating <span class="math">\(e\)</span> without affecting the meaning of <span class="math">\(p\)</span>.</p>
+</blockquote>
+<br/>
+<small><a href="https://www.manning.com/books/functional-programming-in-scala">https://www.manning.com/books/functional-programming-in-scala</a></small>
+</section>
+<section >
+<section >
+<h1>demo</h1>
+</section>
+<section >
+<h2><code>p1 == p2</code> ?</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p1 = {
+  (expr, expr)
+}
+
+val p2 = {
+  val a = expr
+  (a, a)
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2><code>p1 == p2</code> ?</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p1 = {
+  (1 + 2, 1 + 2)
+}
+// p1: (Int, Int) = (3,3)
+
+val p2 = {
+  val a = 1 + 2
+  (a, a)
+}
+// p2: (Int, Int) = (3,3)
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2><code>p1 == p2</code> ?</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p1 = {
+  (println("hi"), println("hi"))
+}
+// hi
+// hi
+// p1: (Unit, Unit) = ((),())
+
+val p2 = {
+  val a = println("hi")
+  (a, a)
+}
+// hi
+// p2: (Unit, Unit) = ((),())
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2><code>p1 == p2</code> ?</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val x = scala.collection.mutable.ListBuffer(1, 2, 3)
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p1 = {
+  (x.toList, x.toList)
+}
+// p1: (List[Int], List[Int]) = (List(1, 2, 3),List(1, 2, 3))
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">x += 4
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p2 = {
+  val a = x.toList
+  (a, a)
+}
+// p2: (List[Int], List[Int]) = (List(1, 2, 3, 4),List(1, 2, 3, 4))
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2><code>p1 == p2</code> ?</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Random._
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val p1 = {
+  (Future { nextInt }, Future { nextInt })
+}
+// p1: (scala.concurrent.Future[Int], scala.concurrent.Future[Int]) = 
+//   (Future(Success(723453419)),Future(Success(-777534612)))
+
+val p2 = {
+  val a = Future { nextInt }
+  (a, a)
+}
+// p2: (scala.concurrent.Future[Int], scala.concurrent.Future[Int]) =
+//   (Future(Success(-21679412)),Future(Success(-21679412)))
+</code></pre></td></tr></table>
+</section>
+</section>
+<section >
+<h2>FP is a commitment to preserving referential transparency</h2>
+<br/>
+<br/>
+<small><a href="https://www.youtube.com/watch?v=qBvFsA3dglk">https://www.youtube.com/watch?v=qBvFsA3dglk</a></small>
+</section>
+<section >
+<h1>algebraic design 1 - basics</h1>
+</section>
+<section >
+<h1>sets</h1>
+<br/>
+<h1>operations</h1>
+<br/>
+<h1>laws</h1>
+</section>
+<section >
+<h3>addition and multiplication of rational numbers</h3>
+<br/> 
+<table>
+<thead>
+<tr class="header">
+<th><p>sets</p></th>
+<th><p>operations</p></th>
+<th><p>laws</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><span class="math">\(\mathbb{Q}\)</span></p></td>
+<td><p><span class="math">\((+,\cdot)\)</span></p></td>
+<td><p>associative</p></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><p>commutative</p></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td><p>left-/right identity</p></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><p>distributive</p></td>
+</tr>
+</tbody>
+</table>
+
+</section>
+<section >
+<section >
+<h1>demo</h1>
+</section>
+<section >
+<h2>sets &amp; ops (EDSL)</h2>
+<h4>parameterized trait</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">trait Algebra[Number] {
+  def add(a: Number, b: Number): Number
+  def mult(a: Number, b: Number): Number
+}
+
+// optional but helpful
+object Algebra {
+  def apply[Number](implicit ev: Algebra[Number]): Algebra[Number] =
+    ev
+    
+  object ops {
+    implicit class Ops[Number](n: Number)(implicit A: Algebra[Number]) {
+      def +(o: Number): Number = A.add(n, o)
+      def *(o: Number): Number = A.mult(n, o)
+    } 
+  }
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>laws</h2>
+<h4>commutative property of multiplication</h4>
+<blockquote>
+<p>GIVEN two rational numbers WHEN multiplied in different orders THEN their products should be the same</p>
+</blockquote>
+<h4>associative property of addition</h4>
+<blockquote>
+<p>GIVEN three rational numbers WHEN when addition is evaluated in different orders THEN their sum should be the same</p>
+</blockquote>
+</section>
+<section >
+<h2>laws</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">object Laws {
+  import Algebra.ops._
+  def commutativePropertyOfMultiplication[Number](a: Number, b: Number)(
+      implicit A: Algebra[Number]): Boolean = {
+    import A._
+    a * b == b * a
+  }
+
+  def associativePropertyOfAddition[Number: Algebra](
+      a: Number,
+      b: Number,
+      c: Number): Boolean = {
+    val A = Algebra[Number]
+    import A._
+    a + (b + c) == (a + b) + c
+  }
+  // other laws ...
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>interpreter</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">object Interpreter {
+  implicit val algebra: Algebra[Double] = new Algebra[Double] {
+    def add(a: Double, b: Double): Double  = a + b
+    def mult(a: Double, b: Double): Double = a * b
+  }
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>laws / ScalaCheck</h2>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import org.scalatest._
+import org.scalatest.prop.PropertyChecks; import Interpreter._
+
+class LawsTests extends PropSpec with PropertyChecks with Matchers {
+
+  import Laws._
+
+  property("associative property of addition") {
+    forAll { (a: Double, b: Double, c: Double) =&gt;
+      associativePropertyOfAddition(a, b, c) shouldBe true
+    }
+  }
+}
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">run(new LawsTests)
+// LawsTests:
+// - associative property of addition
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>programs</h2>
+</br>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">object Programs {
+  import Algebra.ops._
+  
+  def double[Number: Algebra](a: Number): Number =
+    a + a
+
+  def square[Number](a: Number)(implicit A: Algebra[Number]): Number =
+    a * a
+
+  def p1[Number](a: Number, b: Number)(
+      implicit A: Algebra[Number]): Number =
+    double(a) + square(b)
+}
+
+import Programs._
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">p1(42.0, 23.0)
+// res9: Double = 613.0
+</code></pre></td></tr></table>
+</section>
+</section>
+<section >
+<h2>DDD with algebraic API design</h2>
+<table>
+<thead>
+<tr class="header">
+<th><p>algebra</p></th>
+<th><p>code</p></th>
+<th><p>DDD</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>sets</p></td>
+<td><p>algebraic data types</p></td>
+<td><p>entities &amp; value objects</p></td>
+</tr>
+<tr class="even">
+<td><p>operations</p></td>
+<td><p>pure functions</p></td>
+<td><p>business behavior</p></td>
+</tr>
+<tr class="odd">
+<td><p>laws</p></td>
+<td><p>property-based tests</p></td>
+<td><p>business rules</p></td>
+</tr>
+<tr class="even">
+<td><p>algebraic structure</p></td>
+<td><p>parameterized trait / typeclass</p></td>
+<td><p>-</p></td>
+</tr>
+</tbody>
+</table>
+
+</section>
+<section >
+<h2>DDD with algebraic API design</h2>
+<img src="images/algebraic-design-ddd.svg" style="background: transparent; border-style: none;" width="800" height="500">
+</section>
+<section >
+<h2>Semigroup</h2>
+<br/>
+<h2>Monoid</h2>
+<br/>
+<p>similar structures from Cats and Scalaz</p>
+</section>
+<section >
+<h2>best practices</h2>
+<br/>
+<ul>
+<li>typeclasses may extend other typeclasses</li>
+<li>try to use existing typeclasses (e.g. Monoid)</li>
+<li>
+try to use existing instances
+<ul>
+<li>instances for Cats typeclasses: <a href="https://julien-truffaut.github.io/newts/">newts</a></li>
+</ul>
+</li>
+<li>typeclass instances should be unique in program scope</li>
+<li>implement wrappers to isolate multiple instances (newtype)</li>
+<li>test custom instances with the library <a href="https://github.com/typelevel/discipline">discipline</a></li>
+</ul>
+</section>
+<section >
+<h1>algebraic design 2 - effects</h1>
+</section>
+<section >
+<h2>referentially transparent?</h2>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">trait Algebra[Number] {
+  def add(a: Number, b: Number): Number
+  def mult(a: Number, b: Number): Number
+  def div(a: Number, b: Number): Number
+}
+
+object Algebra {
+  def apply[Number](implicit ev: Algebra[Number]): Algebra[Number] =
+    ev
+}
+
+object Interpreter {
+  implicit val algebra = new Algebra[Int] {
+    def add(a: Int, b: Int) = a + b
+    def mult(a: Int, b: Int) = a * b
+    def div(a: Int, b: Int) = a / b
+  }
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>non-total</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import Interpreter._
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">Algebra[Int].div(42, 0)
+// java.lang.ArithmeticException: / by zero
+//   at Interpreter$$anon$1.div(&lt;console&gt;:35)
+//   at Interpreter$$anon$1.div(&lt;console&gt;:32)
+//   ... 44 elided
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>adding effects</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">trait Algebra[Number] {
+  def add(a: Number, b: Number): Option[Number]
+  def mult(a: Number, b: Number): Option[Number]
+  def div(a: Number, b: Number): Option[Number]
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>parameterize effects</h2>
+<br/>
+<h2>with higher-kinded types</h2>
+</section>
+<section >
+<section >
+<h1>demo</h1>
+</section>
+<section >
+<h2>HKTs</h2>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import cats._; import cats.data._; import cats.implicits._
+
+def tuple[A](a: A) = Option((a, a))
+
+tuple(42)
+
+def tupleF[F[_]: Applicative, A](a: A) = Applicative[F].pure((a, a))
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">tupleF[Option, Int](42)
+// res17: Option[(Int, Int)] = Some((42,42))
+
+tupleF[List, Int](42)
+// res18: List[(Int, Int)] = List((42,42))
+
+tupleF[Id, Int](42)
+// res19: cats.Id[(Int, Int)] = (42,42)
+
+tupleF[Either[String, ?], Int](42)
+// res20: scala.util.Either[String,(Int, Int)] = Right((42,42))
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>algebra</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">trait Algebra[F[_], Number] {
+  def add(a: Number, b: Number): F[Number]
+  def mult(a: Number, b: Number): F[Number]
+  def div(a: Number, b: Number): F[Number]
+}
+
+object Algebra {
+  def apply[F[_], Number](implicit ev: Algebra[F, Number]): Algebra[F, Number] = 
+    ev
+    
+  object ops {
+    implicit class Ops[F[_], N](n: N)(implicit A: Algebra[F, N]) {
+      def +(o: N): F[N] = A.add(n, o)
+      def *(o: N): F[N] = A.mult(n, o)
+      def /(o: N): F[N] = A.div(n, o)
+    } 
+  }
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>programs</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import cats.FlatMap
+import cats.implicits._
+import Algebra.ops._
+
+def square[F[_], Number](a: Number)(implicit A: Algebra[F, Number]): F[Number] =
+  a * a
+  
+def sqrOfQuot[F[_], Number](a: Number, b: Number)(
+    implicit A: Algebra[F, Number],
+    F: FlatMap[F]): F[Number] =
+  for {
+    quot &lt;- a / b
+    sqr &lt;- square(quot)
+  } yield sqr
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>interpreter</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">implicit val instance: Algebra[Option, Double] =
+  new Algebra[Option, Double] {
+    def add(a: Double, b: Double): Option[Double]  = (a + b).some
+    def mult(a: Double, b: Double): Option[Double] = (a * b).some
+    def div(a: Double, b: Double): Option[Double] =
+      if (b == 0) None else (a / b).some
+  }
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>examples</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">sqrOfQuot(32.0, 4.0)
+// res24: Option[Double] = Some(64.0)
+
+sqrOfQuot(42.0, 0.0)
+// res25: Option[Double] = None
+</code></pre></td></tr></table>
+</section>
+</section>
+<section >
+<h2>side effects</h2>
+<br/>
+<h2>purely functional</h2>
+<br/>
+<ul>
+<li><p><a href="https://monix.io/docs/2x/eval/task.html">monix.eval.Task</a></p></li>
+<li><p><a href="https://github.com/typelevel/cats-effect">cats.effects.IO</a></p></li>
+<li><p><a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/effect/src/main/scala/scalaz/effect/IO.scala">scalaz.effect.IO</a></p></li>
+<li>...</li>
+</ul>
+</section>
+<section >
+<h2><code>val f: A =&gt; B</code></h2>
+<img src="images/function.svg" style="background: transparent; border-style: none;" width="600" height="350">
+</section>
+<section >
+<h2><code>val f: A =&gt; IO[B]</code></h2>
+<img src="images/pure.svg" style="background: transparent; border-style: none;" width="1000" height="400">
+</section>
+<section >
+<h2><code>val f: A =&gt; IO[B]</code></h2>
+<br/>
+<h3>think</h3>
+<br/>
+<h2><code>val f: Ingredients =&gt; Recipe[Cake]</code></h2>
+</section>
+<section >
+<h3><code>A</code></h3>
+<blockquote>
+<p>the input</p>
+</blockquote>
+<h3><code>IO[B]</code></h3>
+<blockquote>
+<p>a computer program that when executed can produce a <span class="math">\(B\)</span></p>
+</blockquote>
+<h3><code>def f: A =&gt; IO[B]</code></h3>
+<blockquote>
+<p>given the same input, <span class="math">\(f\)</span> will always produce the same "computer program"</p>
+</blockquote>
+</section>
+<section >
+<section >
+<h1>demo</h1>
+</section>
+<section >
+<h2>algebra</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">trait Terminal[F[_]] {
+  def readDouble: F[Double]
+  def putStrLn(line: String): F[Unit]
+}
+
+object Terminal {
+  def apply[F[_]](implicit ev: Terminal[F]): Terminal[F] = ev
+}
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>interpreter</h2>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">import cats.data.OptionT; import cats.effect.IO
+import scala.util.Try
+
+implicit class LiftOption[A](x: Option[A]) {
+  def lift: OptionT[IO, A] = OptionT { IO { x } }
+}
+
+implicit val terminal: Terminal[OptionT[IO, ?]] =
+  new Terminal[OptionT[IO, ?]] {
+    def readDouble: OptionT[IO, Double] =
+      Try(io.StdIn.readDouble()).toOption.lift
+
+    def putStrLn(line: String): OptionT[IO, Unit] =
+      Option(println(line)).lift
+  }
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>program</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val A = Algebra[Option, Double]
+val T = Terminal[OptionT[IO, ?]]
+
+val program = for {
+  x1  &lt;- T.readDouble
+  x2  &lt;- T.readDouble
+  res &lt;- sqrOfQuot(x1, x2).lift
+  _   &lt;- T.putStrLn(res.toString)
+} yield ()
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>example</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">program.orElse(T.putStrLn("error")).value.unsafeRunSync
+// 1.0
+// res30: Option[Unit] = Some(())
+
+program.orElse(T.putStrLn("error")).value.unsafeRunSync
+// 1.0
+// res31: Option[Unit] = Some(())
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>testing</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">final case class S(input: List[Double], output: List[String] = Nil)
+
+implicit val terminalState: Terminal[State[S, ?]] =
+  new Terminal[State[S, ?]] {
+    def readDouble: State[S, Double] =
+      for {
+        s &lt;- State.get[S]
+        _ &lt;- State.modify[S](_.copy(input = s.input.tail))
+      } yield s.input.head
+
+    def putStrLn(line: String): State[S, Unit] =
+      State.modify[S](s =&gt; s.copy(output = s.output ++ List(line)))
+  }
+</code></pre></td></tr></table>
+</section>
+<section >
+<h2>example</h2>
+<br/>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">val T = Terminal[State[S, ?]]
+
+val p = for {
+  x1 &lt;- T.readDouble
+  x2 &lt;- T.readDouble
+  sum = x1 + x2
+  _ &lt;- T.putStrLn(s"$x1 + $x2 = $sum")
+} yield ()
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">println(p.runS(S(List(42.0, 23.0))).value)
+// S(List(),List(42.0 + 23.0 = 65.0))
+</code></pre></td></tr></table>
+</section>
+</section>
+<section >
+<h2>referentially transparent <em>computer programs</em> compose!</h2>
+<p>...and there's more than <code>map</code> and <code>flatMap</code></p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">// e.g. monoid composition
+val p1 = 1.pure[IO] |+| 2.pure[IO]
+
+// or applicative composition
+val f = (_: Int) + (_: Int)
+val sum =
+  f.curried.pure[IO] &lt;*&gt; p1 &lt;*&gt; 3.pure[IO]
+  
+// ...
+</code></pre></td></tr></table>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="scala">sum.unsafeRunSync()
+// res40: Int = 6
+</code></pre></td></tr></table>
+</section>
+<section >
+<h1>thank you!</h1>
+</section>
+<section >
+<ul>
+<li>slides created with <a href="http://fsprojects.github.io/FsReveal/">FsReveal</a></li>
+<li>Scala 2.12.4</li>
+<li>
+libraries:
+<ul>
+<li>cats-core 1.0.1</li>
+<li>cats-effect 0-8</li>
+<li>scalatest 3.0.4</li>
+<li>scalacheck 1.13.4</li>
+<li>kind-projector 0.9.4</li>
+</ul>
+</li>
+<li>tested using <a href="https://github.com/tpolecat/tut">tut</a></li>
+</ul>
+</section>
+<section >
+<ul>
+<li><a href="http://www.seas.upenn.edu/~cis194/fall16/lectures/06-io-and-monads.html">IO and monads</a></li>
+<li><a href="http://www.haskellforall.com/2013/12/equational-reasoning.html">Equational reasoning</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Algebraic_structure">Algebraic structure</a></li>
+<li><a href="https://www.manning.com/books/functional-and-reactive-domain-modeling">Functional and Reactive Domain Modeling, Debasish Ghosh</a></li>
+<li><a href="https://softwaremill.com/free-tagless-compared-how-not-to-commit-to-monad-too-early/">Free and tagless compared - how not to commit to a monad too early</a></li>
+<li><a href="https://hmemcpy.com/2017/10/becoming-foolish/">Becoming Foolish</a></li>
+<li><a href="https://www.youtube.com/watch?v=rK53C-xyPWw">A Year living Freely – Chris Myers</a></li>
+<li><a href="https://www.youtube.com/watch?time_continue=27&amp;v=po3wmq4S15A">scale.bythebay.io: Rob Norris, Functional Programming with Effects</a></li>
+<li><a href="https://typelevel.org/blog/2017/05/02/io-monad-for-cats.html">An IO monad for cats</a></li>
+</ul>
+</section>
+<section >
+<ul>
+<li><a href="https://www.youtube.com/watch?v=wi_vLNULh9Y">scale.bythebay.io: John A. De Goes, The Design of the Scalaz 8 Effect System</a></li>
+<li><a href="https://typelevel.org/blog/2016/08/21/hkts-moving-forward.html">Higher-kinded types: the difference between giving up, and moving forward</a></li>
+<li><a href="https://typelevel.org/blog/2016/09/21/edsls-part-1.html">It's programs all the way down</a></li>
+<li><a href="https://typelevel.org/blog/2016/10/26/edsls-part-2.html">EDSLs as functions</a></li>
+<li><a href="https://www.youtube.com/watch?v=1h11efA4k8E">scale.bythebay.io: Luka Jacobowitz, Building a Tagless Final DSL for WebGL in Scala</a></li>
+<li><a href="https://fsharpforfunandprofit.com/pbt/">An introduction to property based testing</a></li>
+<li><a href="https://www.beyondthelines.net/programming/introduction-to-tagless-final/">Introduction to Tagless final</a></li>
+<li><a href="http://yowconference.com.au/slides/yowwest2014/Morris-ParametricityTypesDocumentationCodeReadability.pdf">Parametricity - Types Are Documentation</a></li>
+<li><a href="http://www.lihaoyi.com/post/StrategicScalaStylePrincipleofLeastPower.html">Strategic Scala Style: Principle of Least Power</a></li>
+</ul>
+</section>
+
+
+        </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+    <script>
+        // Add the nohighlight class and data-noescape attribute to code elements that have already been formatted by FSharp.Formatting
+        $('pre.highlighted code').addClass('nohighlight').attr('data-noescape', '');
+
+        // Full list of configuration options available here:
+        // https://github.com/hakimel/reveal.js#configuration
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            center: true,
+
+            transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+            // Parallax scrolling
+            // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+            // parallaxBackgroundSize: '2100px 900px',
+
+            // Optional libraries used to extend on reveal.js
+            dependencies: [
+                { src: 'lib/js/classList.js', condition: function () { return !document.body.classList; } },
+                { src: 'plugin/markdown/marked.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/markdown/markdown.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } },
+                { src: 'plugin/zoom-js/zoom.js', async: true, condition: function () { return !!document.body.classList; } },
+                { src: 'plugin/notes/notes.js', async: true, condition: function () { return !!document.body.classList; } }
+            ]
+        });
+
+    </script>
+</body>
+</html>
+
